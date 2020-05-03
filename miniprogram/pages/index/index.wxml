@@ -55,5 +55,11 @@
     </navigator>
   </view>
 
+  <!-- 云调用 -->
+  <view class="uploader">
+    <navigator url="../test/test" open-type="navigate" class="uploader-text">
+      <text>测试页面</text>
+    </navigator>
+  </view>
 
 </view>
