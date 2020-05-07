@@ -203,22 +203,41 @@ function fetchStop(type, stop, sid) {
 
 function fetchVehicle(number, direction, stop) {
   var result = []
+  result.summary = [];
   var md5 = crypto.createHash('md5');
   var sid = md5.update(number).digest('hex');
   return new Promise((resolve, reject) => {
     fetchStop(direction, stop, sid).then(firstVehicle => {
       firstVehicle.stop = stop;
       result.push(firstVehicle);
+      if (result[0].stopdis) {
+        result.summary.push({
+          stop: parseInt(result[0].stopdis),
+          time: Math.ceil(parseInt(result[0].time) / 60)
+        });
+      }
       if (firstVehicle.stopdis && stop - firstVehicle.stopdis > 1) {
         stop = stop - firstVehicle.stopdis;
         fetchStop(direction, stop, sid).then(secondVehicle => {
           secondVehicle.stop = stop;
           result.push(secondVehicle);
+          if (result[1].stopdis) {
+            result.summary.push({
+              stop: result.summary[0].stop + parseInt(result[1].stopdis),
+              time: result.summary[0].time + Math.ceil(parseInt(result[1].time) / 60)
+            });
+          }
           if (secondVehicle && secondVehicle.stopdis && stop - secondVehicle.stopdis > 1) {
             stop = stop - secondVehicle.stopdis;
             fetchStop(direction, stop, sid).then(thirdVehicle => {
               thirdVehicle.stop = stop;
               result.push(thirdVehicle);
+              if (result[2].stopdis) {
+                result.summary.push({
+                  stop: result.summary[1].stop + parseInt(result[2].stopdis),
+                  time: result.summary[1].time + Math.ceil(parseInt(result[2].time) / 60)
+                });
+              }
               resolve(result);
             }).catch(error => {
               return reject(result);
