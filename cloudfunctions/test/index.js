@@ -18,11 +18,11 @@ exports.main = async(event, context) => {
     var numbers = await fetchNumber();
     return numbers;
   } else if (event.key == 'fetchDirection') {
-    var directions = await fetchDirection("44路");
+    var directions = await fetchDirection(event.number);
     return directions;
-  } else if (event.key == 'fetchStop') {
-    var directions = await fetchVehicle("44路", 1, event.stop);
-    return directions;
+  } else if (event.key == 'fetchVehicle') {
+    var vehicles = await fetchVehicle(event.number, event.direction, event.stop);
+    return vehicles;
   } else {
     return OPENID;
   }
