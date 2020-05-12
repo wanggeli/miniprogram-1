@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const cheerio = require('cheerio');
 
 // 云函数入口函数
-exports.main = async(event, context) => {
+exports.main = async (event, context) => {
   const {
     OPENID
   } = cloud.getWXContext();
@@ -183,11 +183,11 @@ function fetchDirectionByType(sid, type) {
   });
 }
 
-function fetchStop(type, stop, sid) {
+function fetchStop(stoptype, stopid, sid) {
   return new Promise((resolve, reject) => {
     https.form('https://shanghaicity.openservice.kankanews.com/public/bus/Getstop', {
-      stoptype: type,
-      stopid: stop + ".",
+      stoptype: stoptype,
+      stopid: stopid + ".",
       sid: sid
     }).then(result => {
       result = decodeURIComponent(result);
@@ -195,13 +195,46 @@ function fetchStop(type, stop, sid) {
       if (result.length) {
         resolve(result[0]);
       } else {
-        resolve(result);
+        reject(new Error("Not Found"));
       }
     }).catch(error => reject(error));
   });
 }
 
-function fetchVehicle(number, direction, stop) {
+async function fetchVehicle(number, direction, stop) {
+  var result = [];
+  var md5 = crypto.createHash('md5');
+  var sid = md5.update(number).digest('hex');
+  try {
+    var firstVehicle = await fetchStop(direction, stop, sid);
+    if (firstVehicle.stopdis && stop - firstVehicle.stopdis > 1) {
+      result.push({
+        terminal: firstVehicle.terminal,
+        stop: parseInt(firstVehicle.stopdis),
+        time: Math.ceil(parseInt(firstVehicle.time) / 60)
+      });
+      stop = stop - firstVehicle.stopdis;
+      var secondVehicle = await fetchStop(direction, stop, sid);
+      if (secondVehicle && secondVehicle.stopdis && stop - secondVehicle.stopdis > 1) {
+        result.push({
+          terminal: secondVehicle.terminal,
+          stop: result[0].stop + parseInt(secondVehicle.stopdis),
+          time: result[0].time + Math.ceil(parseInt(secondVehicle.time) / 60)
+        });
+        stop = stop - secondVehicle.stopdis;
+        var thirdVehicle = await fetchStop(direction, stop, sid);
+        result.push({
+          terminal: thirdVehicle.terminal,
+          stop: result[1].stop + parseInt(thirdVehicle.stopdis),
+          time: result[1].time + Math.ceil(parseInt(thirdVehicle.time) / 60)
+        });
+      }
+    }
+  } catch (error) { }
+  return result;
+}
+
+function fetchVehicle1(number, direction, stop) {
   var result = []
   result.summary = [];
   var md5 = crypto.createHash('md5');
