@@ -14,19 +14,52 @@ exports.main = async (event, context) => {
     OPENID
   } = cloud.getWXContext();
 
-  //if (event.number) event.number += "路";
-  if (event.key == 'fetchNumber') {
-    var numbers = await fetchNumber();
-    return numbers;
-  } else if (event.key == 'fetchDirection') {
-    var directions = await fetchDirection(event.number);
-    return directions;
-  } else if (event.key == 'fetchVehicle') {
-    var vehicles = await fetchVehicle(event.number, event.direction, event.stop);
-    return vehicles;
-  } else {
-    return OPENID;
+  // if (event.key == 'fetchNumber') {
+  //   var numbers = await fetchNumber();
+  //   return numbers;
+  // } else if (event.key == 'fetchDirection') {
+  //   var directions = await fetchDirection(event.number);
+  //   return directions;
+  // } else if (event.key == 'fetchVehicle') {
+  //   var vehicles = await fetchVehicle(event.number, event.direction, event.stop);
+  //   return vehicles;
+  // } else {
+  //   return OPENID;
+  // }
+  var v1 = await fetchVehicle("44路", 1, 12);
+  var v2 = await fetchVehicle("44路", 1, 14);
+  var v3 = await fetchVehicle("76路", 0, 12);
+  var v4 = await fetchVehicle("76路", 0, 14);
+  console.log(v1);
+  console.log(v2);
+  console.log(v3);
+  console.log(v4);
+  for (var i = 0; i < v1.length; i++) {
+    for (var j = 0; i < v2.length; j++) {
+      if (v1[i].terminal == v2[j].terminal) {
+        v1[i].stop2 = v2[j].stop;
+        v1[i].time2 = v2[j].time;
+        var delay = v2[j].time + 6; //walking time
+        console.log(`delay ${delay}`);
+        for (var k = 0; k < v3.length; k++) {
+          if (v3[k].time >= delay) {
+            for (var l = 0; l < v4.length; l++) {
+              if (v3[k].terminal == v4[l].terminal) {
+                //console.log(v1[i], v2[j], v3[k], v4[l]);
+                v1[i].stop3 = v3[k].stop;
+                v1[i].time3 = v3[k].time;
+                v1[i].stop4 = v4[l].stop;
+                v1[i].time4 = v4[l].time;
+              }
+              break;
+            }
+          }
+        }
+        break;
+      }
+    }
   }
+  return v1;
 }
 
 async function test() {
