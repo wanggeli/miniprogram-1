@@ -14,6 +14,7 @@ exports.main = async (event, context) => {
     OPENID
   } = cloud.getWXContext();
 
+  //if (event.number) event.number += "路";
   if (event.key == 'fetchNumber') {
     var numbers = await fetchNumber();
     return numbers;
@@ -195,7 +196,8 @@ function fetchStop(stoptype, stopid, sid) {
       if (result.length) {
         resolve(result[0]);
       } else {
-        reject(new Error("Not Found"));
+        resolve(result);
+        //reject(new Error("Not Found"));
       }
     }).catch(error => reject(error));
   });
@@ -205,89 +207,17 @@ async function fetchVehicle(number, direction, stop) {
   var result = [];
   var md5 = crypto.createHash('md5');
   var sid = md5.update(number).digest('hex');
-  try {
-    var firstVehicle = await fetchStop(direction, stop, sid);
-    if (firstVehicle.stopdis && stop - firstVehicle.stopdis > 1) {
-      result.push({
-        terminal: firstVehicle.terminal,
-        stop: parseInt(firstVehicle.stopdis),
-        time: Math.ceil(parseInt(firstVehicle.time) / 60)
-      });
-      stop = stop - firstVehicle.stopdis;
-      var secondVehicle = await fetchStop(direction, stop, sid);
-      if (secondVehicle && secondVehicle.stopdis && stop - secondVehicle.stopdis > 1) {
-        result.push({
-          terminal: secondVehicle.terminal,
-          stop: result[0].stop + parseInt(secondVehicle.stopdis),
-          time: result[0].time + Math.ceil(parseInt(secondVehicle.time) / 60)
-        });
-        stop = stop - secondVehicle.stopdis;
-        var thirdVehicle = await fetchStop(direction, stop, sid);
-        result.push({
-          terminal: thirdVehicle.terminal,
-          stop: result[1].stop + parseInt(thirdVehicle.stopdis),
-          time: result[1].time + Math.ceil(parseInt(thirdVehicle.time) / 60)
-        });
-      }
-    }
-  } catch (error) { }
-  return result;
-}
-
-function fetchVehicle1(number, direction, stop) {
-  var result = []
-  result.summary = [];
-  var md5 = crypto.createHash('md5');
-  var sid = md5.update(number).digest('hex');
-  return new Promise((resolve, reject) => {
-    fetchStop(direction, stop, sid).then(firstVehicle => {
-      firstVehicle.stop = stop;
-      result.push(firstVehicle);
-      if (result[0].stopdis) {
-        result.summary.push({
-          stop: parseInt(result[0].stopdis),
-          time: Math.ceil(parseInt(result[0].time) / 60)
-        });
-      }
-      if (firstVehicle.stopdis && stop - firstVehicle.stopdis > 1) {
-        stop = stop - firstVehicle.stopdis;
-        fetchStop(direction, stop, sid).then(secondVehicle => {
-          secondVehicle.stop = stop;
-          result.push(secondVehicle);
-          if (result[1].stopdis) {
-            result.summary.push({
-              stop: result.summary[0].stop + parseInt(result[1].stopdis),
-              time: result.summary[0].time + Math.ceil(parseInt(result[1].time) / 60)
-            });
-          }
-          if (secondVehicle && secondVehicle.stopdis && stop - secondVehicle.stopdis > 1) {
-            stop = stop - secondVehicle.stopdis;
-            fetchStop(direction, stop, sid).then(thirdVehicle => {
-              thirdVehicle.stop = stop;
-              result.push(thirdVehicle);
-              if (result[2].stopdis) {
-                result.summary.push({
-                  stop: result.summary[1].stop + parseInt(result[2].stopdis),
-                  time: result.summary[1].time + Math.ceil(parseInt(result[2].time) / 60)
-                });
-              }
-              resolve(result);
-            }).catch(error => {
-              return reject(result);
-            });
-          } else {
-            resolve(result);
-          }
-        }).catch(error => {
-          resolve(result);
-        });
-      } else {
-        resolve(result);
-      }
-    }).catch(error => {
-      reject(error);
+  while (stop > 1) {
+    var vehicle = await fetchStop(direction, stop, sid);
+    if (!vehicle.stopdis) break;
+    result.push({
+      terminal: vehicle.terminal,
+      stop: (result.length == 0 ? 0 : result[result.length - 1].stop) + parseInt(vehicle.stopdis),
+      time: (result.length == 0 ? 0 : result[result.length - 1].time) + Math.ceil(parseInt(vehicle.time) / 60)
     });
-  });
+    stop = stop - vehicle.stopdis;
+  }
+  return result;
 }
 
 // function getSid(number) {
