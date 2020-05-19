@@ -1,4 +1,6 @@
 // miniprogram/pages/test/test.js
+var bus = require('./bus');
+
 Page({
 
   /**
@@ -11,59 +13,36 @@ Page({
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad: function(options) {
-    // wx.removeStorage({
-    //   key: 'number',
-    //   data: {
-    //     key: "fetchNumber"
-    //   },
-    //   success(res) {
-    //     console.log(res)
-    //   }
-    // })
-    this.data.timeoutHandler = setTimeout(() => {
-      wx.cloud.callFunction({
-        name: 'test',
-        data: {
-          key: "fetchNumber"
-        },
-        success: function(res) {
-          wx.setStorage({
-            key: "number",
-            data: res.result
-          });
-        },
-        fail: console.error
-      })
-      console.log("onLoad");
-    }, 10)
+  onLoad: function (options) {
+    bus.fetchVehicle("44路", 1, 12).then(result => console.log(result));
+    console.log("onLoad");
   },
 
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
-  onReady: function() {
+  onReady: function () {
     console.log("onReady");
   },
 
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow: function() {
+  onShow: function () {
     console.log("onShow");
   },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
-  onHide: function() {
+  onHide: function () {
     console.log("onHide");
   },
 
   /**
    * 生命周期函数--监听页面卸载
    */
-  onUnload: function() {
+  onUnload: function () {
     if (this.data.timeoutHandler) {
       clearTimeout(this.data.timeoutHandler);
     }
@@ -73,21 +52,21 @@ Page({
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */
-  onPullDownRefresh: function() {
+  onPullDownRefresh: function () {
 
   },
 
   /**
    * 页面上拉触底事件的处理函数
    */
-  onReachBottom: function() {
+  onReachBottom: function () {
 
   },
 
   /**
    * 用户点击右上角分享
    */
-  onShareAppMessage: function() {
+  onShareAppMessage: function () {
 
   }
 })
